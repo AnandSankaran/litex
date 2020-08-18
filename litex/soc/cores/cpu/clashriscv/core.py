@@ -18,48 +18,17 @@ from litex.soc.interconnect.csr import *
 from litex.soc.cores.cpu import CPU, CPU_GCC_TRIPLE_RISCV32
 
 
-CPU_VARIANTS = {
-    "minimal":          "VexRiscv_Min",
-    "minimal+debug":    "VexRiscv_MinDebug",
-    "lite":             "VexRiscv_Lite",
-    "lite+debug":       "VexRiscv_LiteDebug",
-    "standard":         "VexRiscv",
-    "standard+debug":   "VexRiscv_Debug",
-    "imac":             "VexRiscv_IMAC",
-    "imac+debug":       "VexRiscv_IMACDebug",
-    "full":             "VexRiscv_Full",
-    "full+debug":       "VexRiscv_FullDebug",
-    "linux":            "VexRiscv_Linux",
-    "linux+debug":      "VexRiscv_LinuxDebug",
-    "linux+no-dsp":     "VexRiscv_LinuxNoDspFmax",
-}
+CPU_VARIANTS = ["standard"]
 
 
-GCC_FLAGS = {
-    #                               /-------- Base ISA
-    #                               |/------- Hardware Multiply + Divide
-    #                               ||/----- Atomics
-    #                               |||/---- Compressed ISA
-    #                               ||||/--- Single-Precision Floating-Point
-    #                               |||||/-- Double-Precision Floating-Point
-    #                               imacfd
-    "minimal":          "-march=rv32i      -mabi=ilp32",
-    "minimal+debug":    "-march=rv32i      -mabi=ilp32",
-    "lite":             "-march=rv32i      -mabi=ilp32",
-    "lite+debug":       "-march=rv32i      -mabi=ilp32",
-    "standard":         "-march=rv32im     -mabi=ilp32",
-    "standard+debug":   "-march=rv32im     -mabi=ilp32",
-    "imac":             "-march=rv32imac   -mabi=ilp32",
-    "imac+debug":       "-march=rv32imac   -mabi=ilp32",
-    "full":             "-march=rv32im     -mabi=ilp32",
-    "full+debug":       "-march=rv32im     -mabi=ilp32",
-    "linux":            "-march=rv32ima    -mabi=ilp32",
-    "linux+debug":      "-march=rv32ima    -mabi=ilp32",
-    "linux+no-dsp":     "-march=rv32ima    -mabi=ilp32",
-}
+# GCC_FLAGS = {
+#     #                               /-------- Base ISA
+#     #                               |/------- Hardware Multiply + Divide
+#     "standard":         "-march=rv32im     -mabi=ilp32",
+# }
 
 
-class VexRiscvTimer(Module, AutoCSR):
+class ClashRiscVTimer(Module, AutoCSR):
     def __init__(self):
         self._latch    = CSR()
         self._time     = CSRStatus(64)
@@ -78,9 +47,9 @@ class VexRiscvTimer(Module, AutoCSR):
         self.comb += self.interrupt.eq(time >= time_cmp)
 
 
-class VexRiscv(CPU, AutoCSR):
-    name                 = "vexriscv"
-    human_name           = "VexRiscv"
+class ClashRiscV(CPU, AutoCSR):
+    name                 = "clashriscv"
+    human_name           = "ClashRiscV"
     variants             = CPU_VARIANTS
     data_width           = 32
     endianness           = "little"
@@ -100,8 +69,10 @@ class VexRiscv(CPU, AutoCSR):
 
     @property
     def gcc_flags(self):
-        flags = GCC_FLAGS[self.variant]
-        flags += " -D__vexriscv__"
+        flags =  "-march=rv32i "
+        flags += "-march=rv32im "
+        flags += "-mabi=ilp32 "
+        flags += " -D__clashriscv__"
         return flags
 
     def __init__(self, platform, variant="standard"):
@@ -121,9 +92,9 @@ class VexRiscv(CPU, AutoCSR):
                 i_clk                    = ClockSignal(),
                 i_reset                  = ResetSignal() | self.reset,
 
-                i_externalInterruptArray = self.interrupt,
-                i_timerInterrupt         = 0,
-                i_softwareInterrupt      = 0,
+                #i_externalInterruptArray = self.interrupt,
+                #i_timerInterrupt         = 0,
+                #i_softwareInterrupt      = 0,
 
                 o_iBusWishbone_ADR      = ibus.adr,
                 o_iBusWishbone_DAT_MOSI = ibus.dat_w,
@@ -249,21 +220,21 @@ class VexRiscv(CPU, AutoCSR):
         self.cpu_params.update(i_externalResetVector=Signal(32, reset=reset_address))
 
     def add_timer(self):
-        self.submodules.timer = VexRiscvTimer()
+        self.submodules.timer = ClashRiscVTimer()
         self.cpu_params.update(i_timerInterrupt=self.timer.interrupt)
 
     @staticmethod
     def add_sources(platform, variant="standard"):
-        cpu_filename = CPU_VARIANTS[variant] + ".v"
-        vdir = get_data_mod("cpu", "vexriscv").data_location
-        platform.add_source(os.path.join(vdir, cpu_filename))
+        vdir = get_data_mod("cpu", "clashriscv").data_location
+        platform.add_source_dir(os.path.join(vdir, "rtl"))
+        platform.add_verilog_include_path(os.path.join(vdir, "rtl"))
 
     def use_external_variant(self, variant_filename):
-        self.external_variant = True
+        self.external_variant = False
         self.platform.add_source(variant_filename)
 
     def do_finalize(self):
         assert hasattr(self, "reset_address")
         if not self.external_variant:
             self.add_sources(self.platform, self.variant)
-        self.specials += Instance("VexRiscv", **self.cpu_params)
+        self.specials += Instance("clash_riscv", **self.cpu_params)

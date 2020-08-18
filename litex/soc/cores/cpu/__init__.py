@@ -1,5 +1,5 @@
-# This file is Copyright (c) 2015-2020 Florent Kermarrec <florent@enjoy-digital.fr>
 # This file is Copyright (c) 2017-2018 Tim 'mithro' Ansell <me@mith.ro>
+# This file is Copyright (c) 2015-2019 Florent Kermarrec <florent@enjoy-digital.fr>
 # License: BSD
 
 from migen import *
@@ -56,37 +56,21 @@ CPU_GCC_TRIPLE_RISCV64 = (
 
 # CPUS ---------------------------------------------------------------------------------------------
 
-# LM32
 from litex.soc.cores.cpu.lm32 import LM32
-
-# OpenRisc
 from litex.soc.cores.cpu.mor1kx import MOR1KX
-
-# OpenPower
 from litex.soc.cores.cpu.microwatt import Microwatt
-
-# RISC-V (32-bit)
 from litex.soc.cores.cpu.serv import SERV
 from litex.soc.cores.cpu.picorv32 import PicoRV32
 from litex.soc.cores.cpu.minerva import Minerva
 from litex.soc.cores.cpu.vexriscv import VexRiscv
-from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
-from litex.soc.cores.cpu.cv32e40p import CV32E40P
-
-# RISC-V (64-bit)
 from litex.soc.cores.cpu.rocket import RocketRV64
 from litex.soc.cores.cpu.blackparrot import BlackParrotRV64
-
-# Zynq
-from litex.soc.cores.cpu.zynq7000 import Zynq7000
-
+from litex.soc.cores.cpu.cv32e40p import CV32E40P
+from litex.soc.cores.cpu.clashriscv import ClashRiscV
 
 CPUS = {
     # None
     "None"        : CPUNone,
-
-    # External (CPU class provided externally by design/user)
-    "external"    : None,
 
     # LM32
     "lm32"        : LM32,
@@ -94,21 +78,18 @@ CPUS = {
     # OpenRisc
     "mor1kx"      : MOR1KX,
 
-    # OpenPower
+    # Open Power
     "microwatt"   : Microwatt,
 
-    # RISC-V (32-bit)
+    # RISC-V 32-bit
     "serv"        : SERV,
     "picorv32"    : PicoRV32,
     "minerva"     : Minerva,
     "vexriscv"    : VexRiscv,
-    "vexriscv_smp": VexRiscvSMP,
     "cv32e40p"    : CV32E40P,
+    "clashriscv"  : ClashRiscV,
 
-    # RISC-V (64-bit)
+    # RISC-V 64-bit
     "rocket"      : RocketRV64,
     "blackparrot" : BlackParrotRV64,
-
-    # Zynq
-    "zynq7000"    : Zynq7000,
 }

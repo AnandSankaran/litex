@@ -2,11 +2,6 @@
 .global isr
 .global _start
 
-.global smp_lottery_target
-.global smp_lottery_lock
-.global smp_lottery_args
-.global smp_slave
-
 _start:
   j crt_init
   nop
@@ -56,13 +51,13 @@ trap_entry:
   addi sp,sp,16*4
   mret
   .text
-  
+
+
 crt_init:
   la sp, _fstack + 4
   la a0, trap_entry
   csrw mtvec, a0
-  sw x0, smp_lottery_lock, a1
-  
+
 data_init:
   la a0, _fdata
   la a1, _edata
@@ -75,13 +70,6 @@ data_loop:
   add a2,a2,4
   j data_loop
 data_done:
-  
-smp_tyranny:
-  csrr a0, mhartid
-  beqz a0, bss_init
-  call smp_slave
-
-
 
 bss_init:
   la a0, _fbss
@@ -93,15 +81,9 @@ bss_loop:
   j bss_loop
 bss_done:
 
+  li a0, 0x880  //880 enable timer + external interrupt sources (until mstatus.MIE is set, they will never trigger an interrupt)
+  csrw mie,a0
+
   call main
 infinit_loop:
   j infinit_loop
-
-
-
-//Initialized to avoid having them set to zero by BSS clear
-.bss
-  smp_lottery_target: .word 0
-  smp_lottery_args:   .word 0; .word 0; .word 0
-  smp_lottery_lock:   .word 0
-
